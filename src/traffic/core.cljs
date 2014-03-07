@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [cljs.core.async :refer [put! <! >! timeout chan]]
+            [cljs.core.async :refer [sliding-buffer put! <! >! timeout chan]]
             [traffic.car :as car]
             [traffic.state :refer [app-state]]))
 
@@ -10,7 +10,7 @@
 
 (def DIMENSIONS [1200 600])
 
-(def light-changing (chan))
+(def light-changing (chan (sliding-buffer 1)))
 
 ;; ============================================================================
 ;; Widgets
@@ -120,7 +120,7 @@
     (render-state [_ state]
       (let [[width height] (:dimensions state)]
         (dom/div nil
-                 (dom/div #js {:style #js {:background-color "#222"
+                 (dom/div #js {:style #js {:background "url('img/background.png') no-repeat"
                                            :width (str width "px")
                                            :height (str height "px")}}
                           (apply dom/div nil
@@ -146,28 +146,30 @@
   (let [[x y] pos
         [w h] dim]
     (when (= (count (car/filter-objs-in {:x x :y y :width w :height h}
-                                    (:cars @app-state)))
+                                        (:cars @app-state)))
              0)
       (swap! app-state update-in [:cars] conj car))))
 
 (defn create-car
   ([pos dir]
-   {:pos pos
-    :dir dir
-    :dim (if (or (= dir "N") (= dir "S")) [10 20] [20 10])
-    :state :accelerating
-    :accel 0.10
-    :decel 0.30
-    :vel 0
-    :max-vel 5})
+   (let [[w h] [30 40]
+         [w h] (if (or (= dir "N") (= dir "S")) [w h] [h w])]
+     {:pos pos
+      :dir dir
+      :dim [w h]
+      :state :accelerating
+      :accel 0.03
+      :decel 0.09
+      :vel 0
+      :max-vel 4}))
 
   ([{:keys [start dir]}]
    (create-car start dir)))
 
-(def eastbound {:start [1 300]   :dir "E"})
-(def westbound {:start [1199 260] :dir "W"})
-(def southbound {:start [550 1]   :dir "S"})
-(def northbound {:start [590 599]  :dir "N"})
+(def eastbound {:start [1 320]   :dir "E"})
+(def westbound {:start [1199 268] :dir "W"})
+(def southbound {:start [617 1]   :dir "S"})
+(def northbound {:start [670 599]  :dir "N"})
 
 (go (while true
       (<! (timeout 2200))
@@ -204,17 +206,19 @@
       (let [[mode pair light-state] (<! light-changing)
             state @app-state
             target-mode (get-in state [:options :light-mode])]
+        (println mode pair light-state target-mode)
         (when (= target-mode mode)
           (let [lights (map (fn [light]
                               (if (= (:pair light) pair)
                                 (assoc light :state light-state)
                                 light))
                             (:lights state))]
-            (swap! app-state assoc :lights lights))))))
+            (swap! app-state assoc :lights lights))))
+      nil))
 
 (go (while true
-      (>! light-changing [:auto :horizontal :red])
       (>! light-changing [:auto :vertical :green])
+      (>! light-changing [:auto :horizontal :red])
       (<! (timeout (get-in @app-state [:options :north-south-green-time])))
 
       (>! light-changing [:auto :vertical :red])
