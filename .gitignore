@@ -7,5 +7,4 @@ pom.xml
 .lein-deps-sum
 .lein-repl-history
 .lein-plugins/
-traffic-release.js
-traffic.js
+traffic-dev.js

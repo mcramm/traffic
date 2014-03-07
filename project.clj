@@ -15,14 +15,14 @@
     :builds [{:id "dev"
               :source-paths ["src"]
               :compiler {
-                         :output-to "traffic.js"
+                         :output-to "traffic-dev.js"
                          :output-dir "out"
                          :optimizations :none
                          :source-map true}}
              {:id "release"
               :source-paths ["src"]
               :compiler {
-                         :output-to "traffic-release.js"
+                         :output-to "traffic.js"
                          :optimizations :advanced
                          :pretty-print false
                          :preamble  ["react/react.min.js"]
