@@ -206,7 +206,6 @@
       (let [[mode pair light-state] (<! light-changing)
             state @app-state
             target-mode (get-in state [:options :light-mode])]
-        (println mode pair light-state target-mode)
         (when (= target-mode mode)
           (let [lights (map (fn [light]
                               (if (= (:pair light) pair)
