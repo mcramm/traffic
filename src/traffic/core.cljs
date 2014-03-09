@@ -15,18 +15,15 @@
 ;; ============================================================================
 ;; Widgets
 
-(defn freq-input [data owner {:keys [label r onChange]}]
-  (reify
-    om/IRenderState
-    (render-state [_ {:keys [disabled?]}]
-      (dom/div nil
+(defn freq-input [data {:keys [label r disabled? onChange]}]
+  (dom/div nil
                (dom/label nil label)
                (dom/input #js {:type "text"
-                               :ref r
                                :disabled (if disabled? "" "disabled")
+                               :ref r
                                :value data
                                :onChange onChange})
-               (dom/span nil "ms")))))
+               (dom/span nil "ms")))
 
 (defn controls [data owner]
   (reify
@@ -57,17 +54,17 @@
                           (dom/input #js {:type "checkbox"
                                           :onChange #(put! options-comm :light-mode)
                                           :checked (= :auto (:light-mode data))}))
-                 (om/build freq-input (:north-south-green-time data)
-                           {:state {:disabled? auto-mode?}
-                            :opts {:label "North/South Green Light Length"
-                                   :r "north-south"
-                                   :onChange #(put! options-comm :north-south-length)}})
+                 (freq-input (:north-south-green-time data)
+                             {:disabled? auto-mode?
+                              :label "North/South Green Light Length"
+                              :r "north-south"
+                              :onChange #(put! options-comm :north-south-length)})
 
-                 (om/build freq-input (:east-west-green-time data)
-                           {:state {:disabled? auto-mode?}
-                            :opts {:label "East/West Green Light Length"
-                                   :r "east-west"
-                                   :onChange #(put! options-comm :east-west-length)}}))))))
+                 (freq-input (:east-west-green-time data)
+                             {:disabled? auto-mode?
+                              :label "East/West Green Light Length"
+                              :r "east-west"
+                              :onChange #(put! options-comm :east-west-length)}))))))
 
 (defn light [{:keys [pos lane dim state pair] :as light} owner]
   (reify
